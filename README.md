@@ -116,8 +116,8 @@ _________________________________________________________________
 - library - pathlib, glob, matplotlib, numpy, pandas, tensorflow, keras, Augmentor
 
 ## Acknowledgements
-- This project was inspired by upGrad
-- This project was based on upGrad tutorial
+- This is an academic project, inspired by UpGrad
+- This project was created to fulfil PGP AIML Requirement.
 
 
 ## Contact
