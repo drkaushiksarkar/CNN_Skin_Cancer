@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cnn-skin-cancer"
+version = "0.1.0"
+description = "Multiclass CNN for melanoma/skin lesion classification (ISIC-like)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name="Kaushik Sarkar"}]
+dependencies = [
+  "numpy==1.26.4",
+  "pandas==2.2.2",
+  "matplotlib==3.9.0",
+  "tensorflow==2.15.0",
+  "keras==2.15.0",
+  "tensorflow-addons==0.23.0",
+  "pydantic==2.9.2",
+  "typer==0.12.5",
+  "rich==13.7.1",
+  "pyyaml==6.0.2",
+  "scikit-learn==1.5.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.2.2", "pytest-cov==5.0.0", "ruff==0.6.8", "bandit==1.7.9", "pre-commit==3.8.0"]
+
+[project.scripts]
+csc-train = "cnn_skin_cancer.train:app"
+csc-eval  = "cnn_skin_cancer.eval:app"
+csc-predict = "cnn_skin_cancer.predict:app"
+
+[tool.ruff]
+line-length = 100
+select = ["E","F","I","B","UP"]

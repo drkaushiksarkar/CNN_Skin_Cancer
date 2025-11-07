@@ -1,0 +1,32 @@
+seed: 123
+img_height: 180
+img_width: 180
+batch_size: 32
+epochs: 30
+optimizer:
+  name: RMSprop
+  lr: 0.0001
+  rho: 0.9
+  epsilon: 1e-08
+  decay: 1e-06
+classes:
+  - actinic_keratosis
+  - basal_cell_carcinoma
+  - dermatofibroma
+  - melanoma
+  - nevus
+  - pigmented_benign_keratosis
+  - seborrheic_keratosis
+  - squamous_cell_carcinoma
+  - vascular_lesion
+paths:
+  train_dir: data/train
+  val_dir: data/val
+  out_dir: runs
+augment:
+  flip_left_right: true
+  rotation: 0.1
+  zoom: 0.1
+  contrast: 0.1
+class_weight: true
+dropout: 0.3
