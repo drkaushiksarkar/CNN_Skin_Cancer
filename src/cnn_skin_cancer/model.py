@@ -79,12 +79,17 @@ def compile_model(
 
     name = opt_cfg.get("name", "RMSprop").lower()
     if name == "rmsprop":
-        opt = keras.optimizers.RMSprop(
-            learning_rate=opt_cfg.get("lr", 1e-4),
-            rho=opt_cfg.get("rho", 0.9),
-            epsilon=opt_cfg.get("epsilon", 1e-8),
-            decay=opt_cfg.get("decay", 1e-6),
-        )
+        rms_kwargs = {
+            "learning_rate": opt_cfg.get("lr", 1e-4),
+            "rho": opt_cfg.get("rho", 0.9),
+            "epsilon": opt_cfg.get("epsilon", 1e-8),
+        }
+        decay = opt_cfg.get("decay")
+        if decay:
+            rms_kwargs["decay"] = decay
+            opt = keras.optimizers.legacy.RMSprop(**rms_kwargs)
+        else:
+            opt = keras.optimizers.RMSprop(**rms_kwargs)
     else:
         opt = keras.optimizers.Adam(learning_rate=opt_cfg.get("lr", 1e-4))
 

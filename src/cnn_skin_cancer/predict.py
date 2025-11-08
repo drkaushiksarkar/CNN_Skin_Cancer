@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -30,7 +30,7 @@ def run(
     config: str = typer.Option("config/default.yaml", "--config", "-c"),
     top_k: int = typer.Option(3, min=1, max=5, help="Report top-k predictions"),
     as_json: bool = typer.Option(False, help="Emit JSON instead of table output"),
-    save_path: str | None = typer.Option(None, help="Optional JSON file output"),
+    save_path: Optional[str] = typer.Option(None, help="Optional JSON file output"),
 ):
     cfg = load_config(config)
     model = tf.keras.models.load_model(model_path)

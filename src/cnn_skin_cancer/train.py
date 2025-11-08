@@ -67,8 +67,11 @@ def run(
         backbone=cfg.backbone,
         fine_tune_at=cfg.fine_tune_at,
     )
+    aug = augment_layer(cfg.augment.model_dump())
+    model = tf.keras.Sequential([aug, base_model], name="augmented_model")
+    model.build((None, cfg.img_height, cfg.img_width, 3))
     model = compile_model(
-        base_model,
+        model,
         cfg.optimizer.model_dump(),
         num_classes=cfg.num_classes,
         label_smoothing=cfg.label_smoothing,
@@ -79,9 +82,6 @@ def run(
     if dry_run:
         console.log("Dry-run requested; exiting before training.")
         return
-
-    aug = augment_layer(cfg.augment.model_dump())
-    model_aug = tf.keras.Sequential([aug, model], name="augmented_model")
 
     callbacks: list[tf.keras.callbacks.Callback] = [
         tf.keras.callbacks.ModelCheckpoint(
@@ -105,7 +105,7 @@ def run(
         console.log("Estimating class weights for imbalance mitigation…")
         class_weight = compute_class_weights(train_ds)
 
-    history = model_aug.fit(
+    history = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=cfg.epochs,

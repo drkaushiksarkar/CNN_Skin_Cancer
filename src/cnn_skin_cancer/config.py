@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import yaml
 from pydantic import BaseModel, Field, PositiveInt, validator
@@ -45,7 +45,7 @@ class TrainingConfig(BaseModel):
     epochs: PositiveInt = 30
     dropout: float = Field(default=0.3, ge=0.0, le=0.9)
     backbone: str = Field(default="efficientnetb0", description="tf.keras.applications backbone")
-    fine_tune_at: int | None = Field(
+    fine_tune_at: Optional[int] = Field(
         default=None, ge=0, description="Index of layer to start fine-tuning"
     )
     class_weight: bool = False

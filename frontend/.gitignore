@@ -1,0 +1,11 @@
+# Node / Vite artifacts
+node_modules/
+dist/
+*.log
+
+# Local env overrides
+.env
+.env.local
+
+# OS cruft
+.DS_Store
