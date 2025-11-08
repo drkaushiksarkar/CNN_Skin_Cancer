@@ -99,97 +99,30 @@ See `model-card.md` for intended use, risks, and evaluation artifacts. Always in
 2. Add explainability endpoints (Grad-CAM heatmaps) to the API.
 3. Integrate differential privacy or federated fine-tuning for on-device datasets.
 
-<<<<<<< HEAD
-## Table of Contents
-* [General Info](#general-information)
-* [Technologies Used](#technologies-used)
-* [Conclusions](#conclusions)
-* [Acknowledgements](#acknowledgements)
+## Legacy Notebook Snapshot
+DermAssist AI originated from a postgraduate research notebook that worked with 2,357 dermatoscopic images from the ISIC archive. The data spans nine lesion categories: actinic keratosis, basal cell carcinoma, dermatofibroma, melanoma, nevus, pigmented benign keratosis, seborrheic keratosis, squamous cell carcinoma, and vascular lesions.
 
+### Baseline CNN architecture
+The legacy model was a straightforward convolutional stack trained on 180×180 crops. The raw layer dump below is reformatted into blocks so the architecture is easier to parse.
 
-## General Information
-- Melanoma is a type of cancer that can be deadly if not detected early. It accounts for 75% of skin cancer deaths. A solution that can evaluate images and alert dermatologists about the presence of melanoma has the potential to reduce a lot of manual effort needed in diagnosis.
-- The dataset consists of 2357 images of malignant and benign oncological diseases, which were formed from the International Skin Imaging Collaboration (ISIC). All images were sorted according to the classification taken with ISIC, and all subsets were divided into the same number of images, with the exception of melanomas and moles, whose images are slightly dominant.
-- The data set contains the following diseases:
+| Block | Composition (in order) | Output shape | Trainable params |
+| --- | --- | --- | --- |
+| Input prep | Rescaling (1/255) | `(None, 180, 180, 3)` | 0 |
+| Block 1 | Conv2D 64@3×3 → MaxPool2D | `(None, 90, 90, 64)` | 4,864 |
+| Block 2 | Conv2D 128@3×3 ×2 → MaxPool2D | `(None, 43, 43, 128)` | 221,440 |
+| Block 3 | Conv2D 256@3×3 ×2 → MaxPool2D | `(None, 19, 19, 256)` | 885,248 |
+| Block 4 | Conv2D 512@3×3 ×2 → MaxPool2D | `(None, 7, 7, 512)` | 3,539,968 |
+| Block 5 | Conv2D 256@3×3 ×2 → MaxPool2D | `(None, 1, 1, 256)` | 1,769,984 |
+| Classifier | Flatten → Dense 256 → Dense 128 → Dense 9 | `(None, 9)` | 99,849 |
 
-* Actinic keratosis
-* Basal cell carcinoma
-* Dermatofibroma
-* Melanoma
-* Nevus
-* Pigmented benign keratosis
-* Seborrheic keratosis
-* Squamous cell carcinoma
-* Vascular lesion
-- I have used a CNN model having the following architecture:
+### Training recipe
+- Optimizer: RMSprop (`lr=1e-4`, `rho=0.9`, `epsilon=1e-8`, `decay=1e-6`).
+- Libraries: TensorFlow / Keras (modeling), Augmentor (class rebalancing), plus pandas, NumPy, matplotlib, pathlib, and glob for data handling.
 
-_________________________________________________________________
- Layer (type)                Output Shape              Param #   
-=================================================================
- rescaling (Rescaling)       (None, 180, 180, 3)       0         
-                                                                 
- conv2d (Conv2D)             (None, 180, 180, 64)      4864      
-                                                                 
- max_pooling2d (MaxPooling2D  (None, 90, 90, 64)       0         
- )                                                               
-                                                                 
- conv2d_1 (Conv2D)           (None, 88, 88, 128)       73856     
-                                                                 
- conv2d_2 (Conv2D)           (None, 86, 86, 128)       147584    
-                                                                 
- max_pooling2d_1 (MaxPooling  (None, 43, 43, 128)      0         
- 2D)                                                             
-                                                                 
- conv2d_3 (Conv2D)           (None, 41, 41, 256)       295168    
-                                                                 
- conv2d_4 (Conv2D)           (None, 39, 39, 256)       590080    
-                                                                 
- max_pooling2d_2 (MaxPooling  (None, 19, 19, 256)      0         
- 2D)                                                             
-                                                                 
- conv2d_5 (Conv2D)           (None, 17, 17, 512)       1180160   
-                                                                 
- conv2d_6 (Conv2D)           (None, 15, 15, 512)       2359808   
-                                                                 
- max_pooling2d_3 (MaxPooling  (None, 7, 7, 512)        0         
- 2D)                                                             
-                                                                 
- conv2d_7 (Conv2D)           (None, 5, 5, 256)         1179904   
-                                                                 
- conv2d_8 (Conv2D)           (None, 3, 3, 256)         590080    
-                                                                 
- max_pooling2d_4 (MaxPooling  (None, 1, 1, 256)        0         
- 2D)                                                             
-                                                                 
- flatten (Flatten)           (None, 256)               0         
-                                                                 
- dense (Dense)               (None, 256)               65792     
-                                                                 
- dense_1 (Dense)             (None, 128)               32896     
-                                                                 
- dense_2 (Dense)             (None, 9)                 1161      
-                                                                 
-=================================================================
-- I have used RMSprop optimizer and used learning rate 0.0001, rho=0.9, epsilon=1e-08, decay=1e-6.
+### Legacy findings
+1. Training without augmentation, dropout, or class-weighting plateaued near 50 % validation accuracy and overfit rapidly.
+2. Introducing augmentation and dropout stabilized training but still under-served rare malignancies.
+3. Oversampling via Augmentor plus class-imbalance corrections lifted validation accuracy to ~70 % with materially lower overfitting.
 
-## Conclusions
-- Conclusion 1 – CNN without augmentation, dropout, and class imbalance correction resulted in 50% validation accuracy with a tendancy to overfit.
-- Conclusion 2 – CNN with augmentation, after applying dropout layers reduced the tendency to overfit.
-- Conclusion 3 – CNN with class imbalance correction improved accuracy and reduced overfitting. Final accuracy was 70% after addressing class imbalance using Augmentor.
-
-
-## Technologies Used
-- library - pathlib, glob, matplotlib, numpy, pandas, tensorflow, keras, Augmentor
-
-## Acknowledgements
-- This is an academic project, inspired by UpGrad
-- This project was created to fulfil PGP AIML Requirement.
-
-
-## Contact
-Created by [@drkaushiksarkar] - feel free to contact me! www.drkaushiks.com
->>>>>>> e0eb089f3e7da80f9bbe9367d1f737631cf94879
-=======
 ---
 Maintained by **Kaushik Sarkar** · www.drkaushiks.com
->>>>>>> 4bf2664 (updated repo structure)
