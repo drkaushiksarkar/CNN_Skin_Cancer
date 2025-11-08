@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/pypi-v0.2.0-orange?logo=pypi)](pyproject.toml)
-[![CI](https://img.shields.io/github/actions/workflow/status/kaushiksarkar/CNN_Skin_Cancer/ci.yml?branch=main&label=CI&logo=githubactions)](https://github.com/kaushiksarkar/CNN_Skin_Cancer/actions/workflows/ci.yml)
+[![CI](https://github.com/kaushiksarkar/CNN_Skin_Cancer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kaushiksarkar/CNN_Skin_Cancer/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-advanced_professional_tested-purple?logo=pytest)](#quick-start)
 [![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](#quick-start)
 [![Code Quality](https://img.shields.io/badge/code%20quality-ruff%20%2B%20bandit-46a2f1)](Makefile)
