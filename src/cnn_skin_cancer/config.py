@@ -1,4 +1,5 @@
 """Configuration utilities for the CNN skin cancer application."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -44,7 +45,9 @@ class TrainingConfig(BaseModel):
     batch_size: PositiveInt = 32
     epochs: PositiveInt = 30
     dropout: float = Field(default=0.3, ge=0.0, le=0.9)
-    backbone: str = Field(default="efficientnetb0", description="tf.keras.applications backbone")
+    backbone: str = Field(
+        default="efficientnetb0", description="tf.keras.applications backbone"
+    )
     fine_tune_at: Optional[int] = Field(
         default=None, ge=0, description="Index of layer to start fine-tuning"
     )
@@ -55,7 +58,9 @@ class TrainingConfig(BaseModel):
     augment: AugmentConfig = AugmentConfig()
     paths: PathConfig = PathConfig()
     classes: List[str] = Field(..., min_items=2)
-    monitor: str = Field(default="val_f1", description="Metric to monitor for callbacks")
+    monitor: str = Field(
+        default="val_f1", description="Metric to monitor for callbacks"
+    )
 
     @property
     def num_classes(self) -> int:

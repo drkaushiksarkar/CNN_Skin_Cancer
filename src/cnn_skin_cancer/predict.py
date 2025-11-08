@@ -1,4 +1,5 @@
 """CLI inference helpers."""
+
 from __future__ import annotations
 
 import json
@@ -44,8 +45,7 @@ def run(
             {
                 "image": Path(path).name,
                 "top": [
-                    {"class": cfg.classes[int(i)], "prob": float(pr[i])}
-                    for i in order
+                    {"class": cfg.classes[int(i)], "prob": float(pr[i])} for i in order
                 ],
             }
         )

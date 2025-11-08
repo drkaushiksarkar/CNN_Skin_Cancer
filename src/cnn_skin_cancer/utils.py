@@ -1,4 +1,5 @@
 """Utility helpers for deterministic training runs and logging."""
+
 from __future__ import annotations
 
 import logging
@@ -10,6 +11,7 @@ from typing import Iterable
 
 import numpy as np
 import tensorflow as tf
+
 
 def set_seed(seed: int) -> None:
     """Seed python, numpy, and TensorFlow for reproducibility."""
@@ -38,7 +40,9 @@ def create_run_dir(base_dir: str | Path) -> Path:
     return run_dir
 
 
-def serialize_history(history: tf.keras.callbacks.History, out_path: str | Path) -> None:
+def serialize_history(
+    history: tf.keras.callbacks.History, out_path: str | Path
+) -> None:
     """Persist Keras training history as float lists."""
 
     import yaml

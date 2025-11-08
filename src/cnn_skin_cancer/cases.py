@@ -5,6 +5,7 @@ These helpers provide lightweight persistence so the FastAPI service can expose
 case history, clinician notes, and dashboard telemetry without requiring an
 external database.
 """
+
 from __future__ import annotations
 
 import json

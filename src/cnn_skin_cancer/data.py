@@ -1,4 +1,5 @@
 """Input pipelines and augmentations."""
+
 from __future__ import annotations
 
 import tensorflow as tf
@@ -18,7 +19,9 @@ def augment_layer(cfg: dict) -> tf.keras.Sequential:
     return tf.keras.Sequential(ops, name="augment")
 
 
-def _dataset_from_dir(directory, image_size, batch_size, seed, shuffle) -> tf.data.Dataset:
+def _dataset_from_dir(
+    directory, image_size, batch_size, seed, shuffle
+) -> tf.data.Dataset:
     return tf.keras.preprocessing.image_dataset_from_directory(
         directory,
         image_size=image_size,

@@ -1,4 +1,5 @@
 """Model evaluation CLI."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,7 +9,11 @@ import numpy as np
 import tensorflow as tf
 import typer
 from rich.console import Console
-from sklearn.metrics import ConfusionMatrixDisplay, classification_report, confusion_matrix
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    classification_report,
+    confusion_matrix,
+)
 import yaml
 
 from .config import load_config

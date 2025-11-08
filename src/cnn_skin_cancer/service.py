@@ -1,4 +1,5 @@
 """FastAPI inference service for the CNN classifier."""
+
 from __future__ import annotations
 
 import uuid
@@ -149,9 +150,9 @@ def _dashboard_payload(cases: List[CaseRecord]) -> DashboardResponse:
     class_counts = Counter(
         case.predictions[0].label for case in cases if case.predictions
     )
-    avg_risk = round(
-        sum(case.risk_score for case in cases) / len(cases), 3
-    ) if cases else 0.0
+    avg_risk = (
+        round(sum(case.risk_score for case in cases) / len(cases), 3) if cases else 0.0
+    )
     high_risk = sum(1 for case in cases if case.risk_level == "high")
     last_updated = max((case.updated_at for case in cases), default=None)
     status_breakdown = {
@@ -217,7 +218,9 @@ def create_app(model_path: str, cfg: TrainingConfig, top_k: int) -> FastAPI:
         predictions = _predict_from_logits(probs, cfg, top_k)
         prob_map = _probability_map(probs, cfg)
         case_id = uuid.uuid4().hex
-        image_path = repo.save_image(case_id, image.filename or f"{case_id}.jpg", payload)
+        image_path = repo.save_image(
+            case_id, image.filename or f"{case_id}.jpg", payload
+        )
 
         metadata = CaseMetadata(
             patient_id=patient_id,
