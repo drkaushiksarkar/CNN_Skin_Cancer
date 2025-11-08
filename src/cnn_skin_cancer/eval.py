@@ -6,15 +6,15 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import tensorflow as tf
+import typer
+import yaml
 from rich.console import Console
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     classification_report,
     confusion_matrix,
 )
-import tensorflow as tf
-import typer
-import yaml
 
 from .config import load_config
 

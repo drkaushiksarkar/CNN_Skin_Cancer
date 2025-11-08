@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Annotated
 
-from rich.console import Console
 import tensorflow as tf
 import typer
 import yaml
+from rich.console import Console
 
 from .config import TrainingConfig, load_config
 from .data import augment_layer, make_datasets

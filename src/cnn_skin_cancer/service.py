@@ -196,7 +196,7 @@ def create_app(model_path: str, cfg: TrainingConfig, top_k: int) -> FastAPI:
 
     @app.post("/predict", response_model=PredictionResponse)
     async def predict(
-        file: Annotated[UploadFile, File(..., description="Image to classify")]
+        file: Annotated[UploadFile, File(..., description="Image to classify")],
     ) -> PredictionResponse:
         data = await file.read()
         arr = _prepare(data, cfg)
@@ -210,9 +210,9 @@ def create_app(model_path: str, cfg: TrainingConfig, top_k: int) -> FastAPI:
         patient_age: Annotated[int, Form(...)],
         sex: Annotated[str, Form(...)],
         lesion_site: Annotated[str, Form(...)],
-        priority: Annotated[str, Form("routine")] = "routine",
-        notes: Annotated[str | None, Form(None)] = None,
         image: Annotated[UploadFile, File(..., description="Dermatoscopic image")],
+        priority: Annotated[str, Form("routine")],
+        notes: Annotated[str | None, Form(None)],
     ) -> CaseIntakeResponse:
         payload = await image.read()
         arr = _prepare(payload, cfg)
