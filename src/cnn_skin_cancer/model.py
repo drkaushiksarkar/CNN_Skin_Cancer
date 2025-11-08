@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
-
-import tensorflow as tf
+from typing import Callable
 import tensorflow_addons as tfa
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -20,7 +18,7 @@ def build_model(
     img_width: int = 180,
     dropout: float = 0.3,
     backbone: str = "efficientnetb0",
-    fine_tune_at: Optional[int] = None,
+    fine_tune_at: int | None = None,
 ) -> keras.Model:
     """Factory for the classifier supporting modern backbones."""
 

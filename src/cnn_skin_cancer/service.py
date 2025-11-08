@@ -6,7 +6,7 @@ import uuid
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Annotated
 
 import numpy as np
 import tensorflow as tf
@@ -38,7 +38,7 @@ HIGH_RISK_CLASSES = {
 
 
 class PredictionResponse(BaseModel):
-    top: List[Prediction]
+    top: list[Prediction]
 
 
 class CasePublic(BaseModel):
@@ -47,12 +47,12 @@ class CasePublic(BaseModel):
     status: CaseStatus
     risk_level: str
     risk_score: float
-    predictions: List[Prediction]
-    probability_map: Dict[str, float]
+    predictions: list[Prediction]
+    probability_map: dict[str, float]
     created_at: datetime
     updated_at: datetime
-    image_url: Optional[str] = None
-    clinician_notes: List[ClinicianNote] = Field(default_factory=list)
+    image_url: str | None = None
+    clinician_notes: list[ClinicianNote] = Field(default_factory=list)
 
 
 class CaseIntakeResponse(BaseModel):
@@ -60,7 +60,7 @@ class CaseIntakeResponse(BaseModel):
 
 
 class CaseListResponse(BaseModel):
-    cases: List[CasePublic]
+    cases: list[CasePublic]
 
 
 class StatusUpdateRequest(BaseModel):
@@ -81,10 +81,10 @@ class DashboardResponse(BaseModel):
     total_cases: int
     high_risk: int
     avg_risk: float
-    last_updated: Optional[datetime]
-    status_breakdown: Dict[str, int]
-    class_distribution: List[ClassDistribution]
-    recent_cases: List[CasePublic]
+    last_updated: datetime | None
+    status_breakdown: dict[str, int]
+    class_distribution: list[ClassDistribution]
+    recent_cases: list[CasePublic]
 
 
 def _prepare(image_bytes: bytes, cfg: TrainingConfig) -> np.ndarray:
@@ -96,7 +96,7 @@ def _prepare(image_bytes: bytes, cfg: TrainingConfig) -> np.ndarray:
 
 def _predict_from_logits(
     probs: np.ndarray, cfg: TrainingConfig, top_k: int
-) -> List[Prediction]:
+) -> list[Prediction]:
     order = np.argsort(probs)[::-1][:top_k]
     return [
         Prediction(label=cfg.classes[int(idx)], probability=float(probs[idx]))
@@ -104,11 +104,11 @@ def _predict_from_logits(
     ]
 
 
-def _probability_map(probs: np.ndarray, cfg: TrainingConfig) -> Dict[str, float]:
+def _probability_map(probs: np.ndarray, cfg: TrainingConfig) -> dict[str, float]:
     return {cfg.classes[int(i)]: float(prob) for i, prob in enumerate(probs)}
 
 
-def _score_case(predictions: List[Prediction], priority: str) -> tuple[float, str]:
+def _score_case(predictions: list[Prediction], priority: str) -> tuple[float, str]:
     if not predictions:
         return 0.0, "low"
     top = predictions[0]
@@ -145,7 +145,7 @@ def _case_to_public(case: CaseRecord) -> CasePublic:
     )
 
 
-def _dashboard_payload(cases: List[CaseRecord]) -> DashboardResponse:
+def _dashboard_payload(cases: list[CaseRecord]) -> DashboardResponse:
     status_counts = Counter(case.status.value for case in cases)
     class_counts = Counter(
         case.predictions[0].label for case in cases if case.predictions
@@ -191,11 +191,13 @@ def create_app(model_path: str, cfg: TrainingConfig, top_k: int) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/classes")
-    async def list_classes() -> dict[str, List[str]]:
+    async def list_classes() -> dict[str, list[str]]:
         return {"classes": cfg.classes}
 
     @app.post("/predict", response_model=PredictionResponse)
-    async def predict(file: UploadFile = File(...)) -> PredictionResponse:
+    async def predict(
+        file: Annotated[UploadFile, File(..., description="Image to classify")]
+    ) -> PredictionResponse:
         data = await file.read()
         arr = _prepare(data, cfg)
         probs = model.predict(np.expand_dims(arr, axis=0), verbose=0)[0]
@@ -204,13 +206,13 @@ def create_app(model_path: str, cfg: TrainingConfig, top_k: int) -> FastAPI:
 
     @app.post("/cases/intake", response_model=CaseIntakeResponse)
     async def intake_case(
-        patient_id: str = Form(...),
-        patient_age: int = Form(...),
-        sex: str = Form(...),
-        lesion_site: str = Form(...),
-        priority: str = Form("routine"),
-        notes: Optional[str] = Form(None),
-        image: UploadFile = File(...),
+        patient_id: Annotated[str, Form(...)],
+        patient_age: Annotated[int, Form(...)],
+        sex: Annotated[str, Form(...)],
+        lesion_site: Annotated[str, Form(...)],
+        priority: Annotated[str, Form("routine")] = "routine",
+        notes: Annotated[str | None, Form(None)] = None,
+        image: Annotated[UploadFile, File(..., description="Dermatoscopic image")],
     ) -> CaseIntakeResponse:
         payload = await image.read()
         arr = _prepare(payload, cfg)
@@ -298,11 +300,13 @@ def create_app(model_path: str, cfg: TrainingConfig, top_k: int) -> FastAPI:
 
 @cli.command()
 def serve(
-    model_path: str = typer.Argument(..., help="Path to .keras or SavedModel"),
-    config: str = typer.Option("config/default.yaml", "--config", "-c"),
-    host: str = typer.Option("0.0.0.0", help="Host/IP to bind"),
-    port: int = typer.Option(8000, help="TCP port"),
-    top_k: int = typer.Option(3, help="How many classes to return"),
+    model_path: Annotated[str, typer.Argument(help="Path to .keras or SavedModel")],
+    config: Annotated[
+        str, typer.Option("--config", "-c", help="Path to YAML config")
+    ] = "config/default.yaml",
+    host: Annotated[str, typer.Option(help="Host/IP to bind")] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="TCP port")] = 8000,
+    top_k: Annotated[int, typer.Option(help="How many classes to return")] = 3,
 ):
     cfg = load_config(config)
     app = create_app(model_path, cfg, top_k)

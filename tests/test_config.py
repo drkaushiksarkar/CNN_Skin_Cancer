@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from cnn_skin_cancer.config import TrainingConfig, load_config
 
 
@@ -24,7 +22,7 @@ augment: {flip_left_right: false}
         """
     )
     cfg = load_config(cfg_path)
-    assert isinstance(cfg, TrainingConfig)
+    assert isinstance(cfg, TrainingConfig)  # nosec B101 - pytest assertion
     dumped = cfg.model_dump()
-    assert dumped["img_height"] == 64
-    assert dumped["classes"] == ["a", "b"]
+    assert dumped["img_height"] == 64  # nosec B101 - test assertion
+    assert dumped["classes"] == ["a", "b"]  # nosec B101 - test assertion

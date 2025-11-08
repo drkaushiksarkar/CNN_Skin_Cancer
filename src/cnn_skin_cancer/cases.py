@@ -13,7 +13,6 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from threading import Lock
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -40,7 +39,7 @@ class CaseMetadata(BaseModel):
     sex: str = Field(..., min_length=1)
     lesion_site: str = Field(..., min_length=1)
     priority: str = Field(default="routine")
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ClinicianNote(BaseModel):
@@ -52,15 +51,15 @@ class ClinicianNote(BaseModel):
 class CaseRecord(BaseModel):
     id: str
     metadata: CaseMetadata
-    predictions: List[Prediction] = Field(default_factory=list)
-    probability_map: Dict[str, float] = Field(default_factory=dict)
+    predictions: list[Prediction] = Field(default_factory=list)
+    probability_map: dict[str, float] = Field(default_factory=dict)
     risk_score: float = 0.0
     risk_level: str = "low"
     status: CaseStatus = CaseStatus.intake
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    image_path: Optional[str] = None
-    clinician_notes: List[ClinicianNote] = Field(default_factory=list)
+    image_path: str | None = None
+    clinician_notes: list[ClinicianNote] = Field(default_factory=list)
 
 
 class CaseRepository:
@@ -74,10 +73,10 @@ class CaseRepository:
         self.image_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.root / "cases.json"
         self._lock = Lock()
-        self._cases: List[CaseRecord] = self._load_cases()
+        self._cases: list[CaseRecord] = self._load_cases()
 
     # --------------------------------------------------------------------- CRUD
-    def _load_cases(self) -> List[CaseRecord]:
+    def _load_cases(self) -> list[CaseRecord]:
         if not self.db_path.exists():
             return []
         raw = self.db_path.read_text(encoding="utf-8").strip()
@@ -90,11 +89,11 @@ class CaseRepository:
         data = [case.model_dump(mode="json") for case in self._cases]
         self.db_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
-    def list_cases(self) -> List[CaseRecord]:
+    def list_cases(self) -> list[CaseRecord]:
         with self._lock:
             return list(self._cases)
 
-    def get_case(self, case_id: str) -> Optional[CaseRecord]:
+    def get_case(self, case_id: str) -> CaseRecord | None:
         with self._lock:
             for case in self._cases:
                 if case.id == case_id:
@@ -116,7 +115,7 @@ class CaseRepository:
         path.write_bytes(payload)
         return path
 
-    def update_status(self, case_id: str, status: CaseStatus) -> Optional[CaseRecord]:
+    def update_status(self, case_id: str, status: CaseStatus) -> CaseRecord | None:
         case = self.get_case(case_id)
         if not case:
             return None
@@ -128,7 +127,7 @@ class CaseRepository:
         )
         return self.upsert(updated)
 
-    def add_note(self, case_id: str, note: ClinicianNote) -> Optional[CaseRecord]:
+    def add_note(self, case_id: str, note: ClinicianNote) -> CaseRecord | None:
         case = self.get_case(case_id)
         if not case:
             return None

@@ -1,4 +1,6 @@
-import subprocess, sys, os, textwrap, yaml, json, pathlib
+import subprocess  # nosec B404
+import sys
+import textwrap
 
 
 def test_cli_runs_with_default_config(tmp_path):
@@ -20,8 +22,8 @@ def test_cli_runs_with_default_config(tmp_path):
         )
     )
     # only check that package import works (no heavy training)
-    out = subprocess.run(
+    out = subprocess.run(  # nosec B603 - controlled command for smoke test
         [sys.executable, "-c", "import cnn_skin_cancer, sys; print('ok')"],
         capture_output=True,
     )
-    assert out.returncode == 0
+    assert out.returncode == 0  # nosec B101 - pytest assertion preferred

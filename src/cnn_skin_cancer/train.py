@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
+from rich.console import Console
+import tensorflow as tf
 import typer
 import yaml
-import tensorflow as tf
-from rich.console import Console
 
 from .config import TrainingConfig, load_config
 from .data import augment_layer, make_datasets
@@ -32,14 +33,20 @@ def _persist_config(cfg: TrainingConfig, run_dir: Path) -> None:
 
 @app.command()
 def run(
-    config: str = typer.Option(
-        "config/default.yaml",
-        "--config",
-        "-c",
-        help="Path to YAML config file.",
-    ),
-    log_level: str = typer.Option("INFO", help="Python logging level for the run."),
-    dry_run: bool = typer.Option(False, help="Build the model and exit (no training)."),
+    config: Annotated[
+        str,
+        typer.Option(
+            "--config",
+            "-c",
+            help="Path to YAML config file.",
+        ),
+    ] = "config/default.yaml",
+    log_level: Annotated[
+        str, typer.Option(help="Python logging level for the run.")
+    ] = "INFO",
+    dry_run: Annotated[
+        bool, typer.Option(help="Build the model and exit (no training).")
+    ] = False,
 ):
     cfg = load_config(config)
     configure_logging(log_level)

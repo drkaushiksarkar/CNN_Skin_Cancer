@@ -10,6 +10,6 @@ def test_model_output_shape():
     model = compile_model(model, {"name": "RMSprop", "lr": 1e-4}, num_classes=9)
     x = tf.random.uniform((2, 180, 180, 3))
     y = model(x)
-    assert y.shape == (2, 9)
+    assert y.shape == (2, 9)  # nosec B101 - pytest assertion
     s = tf.reduce_sum(y, axis=1).numpy()
-    assert (abs(s - 1.0) < 1e-5).all()
+    assert (abs(s - 1.0) < 1e-5).all()  # nosec B101 - pytest assertion

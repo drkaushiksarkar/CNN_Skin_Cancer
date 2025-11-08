@@ -15,8 +15,8 @@ import csv
 import random
 import shutil
 from collections import defaultdict
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
 
 CLASSES: Sequence[str] = (
     "actinic_keratosis",
@@ -31,7 +31,7 @@ CLASSES: Sequence[str] = (
 )
 
 # diagnosis_3 carries the most granular labels; fall back to diagnosis_2 for vascular lesions
-DIAG3_TO_CLASS: Dict[str, str] = {
+DIAG3_TO_CLASS: dict[str, str] = {
     "Solar or actinic keratosis": "actinic_keratosis",
     "Basal cell carcinoma": "basal_cell_carcinoma",
     "Dermatofibroma": "dermatofibroma",
@@ -47,7 +47,7 @@ DIAG3_TO_CLASS: Dict[str, str] = {
     "Squamous cell carcinoma, NOS": "squamous_cell_carcinoma",
 }
 
-DIAG2_TO_CLASS: Dict[str, str] = {
+DIAG2_TO_CLASS: dict[str, str] = {
     "Benign soft tissue proliferations - Vascular": "vascular_lesion",
 }
 
@@ -98,14 +98,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def assign_class(row: Dict[str, str]) -> str | None:
+def assign_class(row: dict[str, str]) -> str | None:
     diag3 = (row.get("diagnosis_3") or "").strip()
     diag2 = (row.get("diagnosis_2") or "").strip()
     return DIAG3_TO_CLASS.get(diag3) or DIAG2_TO_CLASS.get(diag2)
 
 
-def collect_samples(metadata_path: Path, images_dir: Path) -> Dict[str, List[Path]]:
-    buckets: Dict[str, List[Path]] = defaultdict(list)
+def collect_samples(metadata_path: Path, images_dir: Path) -> dict[str, list[Path]]:
+    buckets: dict[str, list[Path]] = defaultdict(list)
     with metadata_path.open(encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
@@ -128,11 +128,11 @@ def reset_dirs(root: Path) -> None:
 
 
 def stratified_split(
-    samples: Dict[str, List[Path]], val_ratio: float, seed: int
-) -> Tuple[Dict[str, List[Path]], Dict[str, List[Path]]]:
-    rng = random.Random(seed)
-    train: Dict[str, List[Path]] = {}
-    val: Dict[str, List[Path]] = {}
+    samples: dict[str, list[Path]], val_ratio: float, seed: int
+) -> tuple[dict[str, list[Path]], dict[str, list[Path]]]:
+    rng = random.Random(seed)  # nosec B311 - deterministic split only
+    train: dict[str, list[Path]] = {}
+    val: dict[str, list[Path]] = {}
     for label in CLASSES:
         paths = samples.get(label, [])
         if not paths:
@@ -150,7 +150,7 @@ def stratified_split(
 
 
 def materialise_samples(
-    allocations: Dict[str, List[Path]],
+    allocations: dict[str, list[Path]],
     target_root: Path,
     copy_files: bool,
 ) -> None:

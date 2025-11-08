@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
 
 import yaml
 from pydantic import BaseModel, Field, PositiveInt, validator
@@ -48,7 +47,7 @@ class TrainingConfig(BaseModel):
     backbone: str = Field(
         default="efficientnetb0", description="tf.keras.applications backbone"
     )
-    fine_tune_at: Optional[int] = Field(
+    fine_tune_at: int | None = Field(
         default=None, ge=0, description="Index of layer to start fine-tuning"
     )
     class_weight: bool = False
@@ -57,7 +56,7 @@ class TrainingConfig(BaseModel):
     optimizer: OptimizerConfig = OptimizerConfig()
     augment: AugmentConfig = AugmentConfig()
     paths: PathConfig = PathConfig()
-    classes: List[str] = Field(..., min_items=2)
+    classes: list[str] = Field(..., min_items=2)
     monitor: str = Field(
         default="val_f1", description="Metric to monitor for callbacks"
     )
