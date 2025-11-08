@@ -1,57 +1,118 @@
 from __future__ import annotations
-import os, time, yaml, typer
-from rich import print
+
+from pathlib import Path
+
+import typer
+import yaml
 import tensorflow as tf
+from rich.console import Console
+
+from .config import TrainingConfig, load_config
+from .data import augment_layer, make_datasets
 from .model import build_model, compile_model
-from .data import make_datasets, augment_layer
+from .utils import (
+    compute_class_weights,
+    configure_logging,
+    create_run_dir,
+    enable_mixed_precision,
+    log_model_summary,
+    serialize_history,
+    set_seed,
+)
 
-app = typer.Typer(help="Train CNN skin-cancer classifier")
+console = Console()
+app = typer.Typer(help="Train the CNN skin-cancer classifier with enterprise defaults.")
 
-@app.command()
-def run(config: str = "config/default.yaml"):
-    with open(config, "r") as f:
-        cfg = yaml.safe_load(f)
 
-    os.makedirs(cfg["paths"]["out_dir"], exist_ok=True)
-    run_dir = os.path.join(cfg["paths"]["out_dir"], time.strftime("%Y%m%d-%H%M%S"))
-    os.makedirs(run_dir, exist_ok=True)
-
-    train_ds, val_ds = make_datasets(
-        cfg["paths"]["train_dir"], cfg["paths"]["val_dir"],
-        cfg["img_height"], cfg["img_width"], cfg["batch_size"], cfg["seed"]
+def _persist_config(cfg: TrainingConfig, run_dir: Path) -> None:
+    (run_dir / "config.resolved.yaml").write_text(
+        yaml.safe_dump(cfg.model_dump(mode="json")), encoding="utf-8"
     )
 
-    model = build_model(num_classes=len(cfg["classes"]),
-                        img_height=cfg["img_height"], img_width=cfg["img_width"],
-                        dropout=cfg["dropout"])
-    model = compile_model(model, cfg["optimizer"])
 
-    aug = augment_layer(cfg["augment"])
+@app.command()
+def run(
+    config: str = typer.Option(
+        "config/default.yaml",
+        "--config",
+        "-c",
+        help="Path to YAML config file.",
+    ),
+    log_level: str = typer.Option("INFO", help="Python logging level for the run."),
+    dry_run: bool = typer.Option(False, help="Build the model and exit (no training)."),
+):
+    cfg = load_config(config)
+    configure_logging(log_level)
+    set_seed(cfg.seed)
+    enable_mixed_precision(cfg.mixed_precision)
+
+    run_dir = create_run_dir(cfg.paths.out_dir)
+    _persist_config(cfg, run_dir)
+    console.log(f"Run directory: {run_dir}")
+
+    train_ds, val_ds = make_datasets(
+        cfg.paths.train_dir,
+        cfg.paths.val_dir,
+        cfg.img_height,
+        cfg.img_width,
+        cfg.batch_size,
+        cfg.seed,
+    )
+
+    base_model = build_model(
+        num_classes=cfg.num_classes,
+        img_height=cfg.img_height,
+        img_width=cfg.img_width,
+        dropout=cfg.dropout,
+        backbone=cfg.backbone,
+        fine_tune_at=cfg.fine_tune_at,
+    )
+    model = compile_model(
+        base_model,
+        cfg.optimizer.model_dump(),
+        num_classes=cfg.num_classes,
+        label_smoothing=cfg.label_smoothing,
+    )
+    console.log("Model summary:")
+    console.log(log_model_summary(model))
+
+    if dry_run:
+        console.log("Dry-run requested; exiting before training.")
+        return
+
+    aug = augment_layer(cfg.augment.model_dump())
     model_aug = tf.keras.Sequential([aug, model], name="augmented_model")
 
-    callbacks = [
-        tf.keras.callbacks.ModelCheckpoint(os.path.join(run_dir, "model.keras"),
-                                           save_best_only=True, monitor="val_accuracy", mode="max"),
-        tf.keras.callbacks.EarlyStopping(patience=6, restore_best_weights=True, monitor="val_accuracy"),
-        tf.keras.callbacks.TensorBoard(log_dir=os.path.join(run_dir, "tb")),
+    callbacks: list[tf.keras.callbacks.Callback] = [
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath=str(run_dir / "model.keras"),
+            save_best_only=True,
+            monitor=cfg.monitor,
+            mode="max",
+        ),
+        tf.keras.callbacks.EarlyStopping(
+            patience=8, restore_best_weights=True, monitor=cfg.monitor
+        ),
+        tf.keras.callbacks.TensorBoard(log_dir=str(run_dir / "tb")),
+        tf.keras.callbacks.CSVLogger(str(run_dir / "metrics.csv")),
+        tf.keras.callbacks.ReduceLROnPlateau(
+            monitor=cfg.monitor, factor=0.2, patience=4, min_lr=1e-7
+        ),
     ]
 
     class_weight = None
-    if cfg.get("class_weight", False):
-        print("[yellow]Estimating class weights (one pass) …[/]")
-        counts = {}
-        for _, y in train_ds.unbatch():
-            idx = int(tf.argmax(y).numpy())
-            counts[idx] = counts.get(idx, 0) + 1
-        total = sum(counts.values())
-        class_weight = {i: total/(len(counts)*cnt) for i, cnt in counts.items()}
+    if cfg.class_weight:
+        console.log("Estimating class weights for imbalance mitigation…")
+        class_weight = compute_class_weights(train_ds)
 
     history = model_aug.fit(
-        train_ds, validation_data=val_ds, epochs=cfg["epochs"],
-        class_weight=class_weight, verbose=2, callbacks=callbacks
+        train_ds,
+        validation_data=val_ds,
+        epochs=cfg.epochs,
+        class_weight=class_weight,
+        verbose=2,
+        callbacks=callbacks,
     )
-    model.save(os.path.join(run_dir, "final_model.keras"))
-    with open(os.path.join(run_dir, "history.yaml"), "w") as f:
-        yaml.safe_dump({k: [float(v) for v in history.history[k]] for k in history.history}, f)
-
-    print(f"[green]Done. Artifacts in[/] {run_dir}")
+    model.save(str(run_dir / "final_model.keras"))
+    serialize_history(history, run_dir / "history.yaml")
+    console.log(f"[green]Training complete[/] · artifacts stored in {run_dir}")

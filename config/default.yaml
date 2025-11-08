@@ -30,3 +30,8 @@ augment:
   contrast: 0.1
 class_weight: true
 dropout: 0.3
+backbone: efficientnetb0
+fine_tune_at:
+mixed_precision: false
+label_smoothing: 0.0
+monitor: val_f1

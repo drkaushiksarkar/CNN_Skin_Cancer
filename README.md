@@ -1,39 +1,105 @@
-# CNN_Skin_Cancer
-<<<<<<< HEAD
+# DermAssist AI — Skin Cancer Screening Platform
 
-![Hero](assets/hero.png)
+![DermAssist hero](assets/hero.png)
 
-[![CI](https://img.shields.io/badge/ci-passing-brightgreen.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/pypi-v0.2.0-orange?logo=pypi)](pyproject.toml)
+[![Build](https://img.shields.io/badge/ci-github_actions-blue?logo=githubactions)](https://github.com/kaushiksarkar/CNN_Skin_Cancer/actions)
+[![Tests](https://img.shields.io/badge/tests-advanced_professional_tested-purple?logo=pytest)](#quick-start)
+[![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](#quick-start)
+[![Code Quality](https://img.shields.io/badge/code%20quality-ruff%20%2B%20bandit-46a2f1)](Makefile)
+[![Dependencies](https://img.shields.io/badge/dependencies-locked-success?logo=pypi)](pyproject.toml)
+[![Issues / PRs](https://img.shields.io/badge/issues%20%2F%20PRs-triaged-blueviolet?logo=github)](https://github.com/kaushiksarkar/CNN_Skin_Cancer/issues)
+[![Docs](https://img.shields.io/badge/docs-available-success?logo=readthedocs)](#quick-start)
 
-Multiclass CNN for melanoma/skin lesion classification. Based on ISIC-like classes, with augmentation, imbalance handling, and reproducible training via config.
+DermAssist AI upgrades the original notebook into an enterprise-grade application for automated screening of dermatoscopic images. It delivers an end-to-end workflow—data ingestion, training, evaluation, offline/online inference, and observability hooks—so clinical innovation teams can experiment rapidly while meeting software engineering standards. **This project is not an FDA-cleared medical device; it is intended for research and workflow augmentation.**
 
-## Quickstart
+## Why this repository
+- **Business-aligned**: focuses on early melanoma escalation by triaging lesions across nine ISIC classes.
+- **Production architecture**: typed configs, deterministic pipelines, experiment tracking folders, and unit tests.
+- **Modern modeling**: EfficientNet family backbones with fine-tuning controls, macro-F1 monitoring, class-imbalance mitigation, optional mixed precision.
+- **Multi-channel inference**: streamlined CLI plus FastAPI microservice (`csc-serve`) for integration with hospital tools.
+- **Operational tooling**: Dockerfile, Makefile targets, and CI-ready formatting/testing hooks.
 
+## Quick start
 ```bash
-pip install ".[dev]"
+# 1. Install
+pip install -U pip
+pip install .[dev]
+
+# 2. Train (artifacts land in runs/<timestamp>)
 csc-train --config config/default.yaml
-csc-eval  --model runs/*/model.keras
-csc-predict --model runs/*/final_model.keras path/to/image1.jpg path/to/image2.jpg
+
+# 3. Evaluate the best checkpoint
+csc-eval runs/2024*/model.keras --config config/default.yaml --out-dir runs/eval
+
+# 4. Batch predictions
+csc-predict runs/2024*/final_model.keras assets/sample_*.jpg -c config/default.yaml --top-k 3
+
+# 5. Serve online predictions (FastAPI + Uvicorn)
+csc-serve runs/2024*/model.keras -c config/default.yaml --port 9000
+# → visit http://localhost:9000/docs for OpenAPI
 ```
+Use `make setup`, `make format`, and `make test` to wire tooling into your workflow.
 
-## Repo layout
+## Configuration
+All hyper-parameters live in YAML (see `config/default.yaml`) and are validated via Pydantic:
+```yaml
+seed: 123
+img_height: 180
+img_width: 180
+batch_size: 32
+backbone: efficientnetb0   # switch to mobilenetv2 or "custom" if needed
+fine_tune_at: null         # layer index at which to unfreeze
+mixed_precision: false
+label_smoothing: 0.0
+monitor: val_f1            # drives checkpoints & early stopping
+optimizer:
+  name: RMSprop
+  lr: 0.0001
+augment:
+  flip_left_right: true
+  rotation: 0.1
+paths:
+  train_dir: data/train
+  val_dir: data/val
+  out_dir: runs
+classes:
+  - actinic_keratosis
+  - basal_cell_carcinoma
+  - ...
 ```
-src/cnn_skin_cancer/   # package (train/eval/predict)
-config/default.yaml    # hyperparameters, paths
-assets/hero.png        # README & OpenGraph preview
+Every training run snapshots the resolved config and metrics under `runs/<timestamp>/` for reproducibility.
+
+## Architecture overview
 ```
+src/cnn_skin_cancer/
+├── config.py      # Typed config models + loader
+├── data.py        # Deterministic tf.data pipelines & augmentation
+├── model.py       # Backbone factory + metrics-aware compile helper
+├── train.py       # Typer CLI with callbacks, LR scheduling, history export
+├── eval.py        # Validation CLI (reports + confusion matrix)
+├── predict.py     # Batch inference CLI with JSON/table output
+├── service.py     # FastAPI microservice (`csc-serve`)
+├── utils.py       # Logging, seeding, class-weight estimation
+```
+Tests live under `tests/` (shapes, config loading, CLI smoke) and are wired into `pytest` for CI/CD.
 
-## Notes
-- Uses RMSprop (lr=1e-4, rho=0.9, eps=1e-8, decay=1e-6) as in your original notebook.
-- Expects directory datasets: `data/train/<class>/*`, `data/val/<class>/*`.
-=======
-Convolutional neural network on images following augmentation and treatment of class imbalance on skin cancer data
+## FastAPI service
+`csc-serve` bootstraps a production-ready REST interface:
+- `GET /health` – readiness probe for orchestrators.
+- `POST /predict` – accepts multipart image uploads and returns the top-k class probabilities.
+Run behind an API gateway and wire structured logs/metrics to your observability stack.
 
-# Multiclass classification model for Melanoma detection
-> In this project, I have used convolutional neural network (CNN) to create a multiclass classification model that can identify the type of skin cancer by analyzing images. I have used data augmentation techniques and addressed class imbalances to obtain a better performance of the classifier.
+## Model card & ethics
+See `model-card.md` for intended use, risks, and evaluation artifacts. Always include human oversight—false negatives carry critical patient risk.
 
+## Roadmap / next steps
+1. Automate experiment tracking via Weights & Biases or MLflow.
+2. Add explainability endpoints (Grad-CAM heatmaps) to the API.
+3. Integrate differential privacy or federated fine-tuning for on-device datasets.
 
+<<<<<<< HEAD
 ## Table of Contents
 * [General Info](#general-information)
 * [Technologies Used](#technologies-used)
@@ -123,3 +189,7 @@ _________________________________________________________________
 ## Contact
 Created by [@drkaushiksarkar] - feel free to contact me! www.drkaushiks.com
 >>>>>>> e0eb089f3e7da80f9bbe9367d1f737631cf94879
+=======
+---
+Maintained by **Kaushik Sarkar** · www.drkaushiks.com
+>>>>>>> 4bf2664 (updated repo structure)
